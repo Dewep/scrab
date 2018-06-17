@@ -1,27 +1,50 @@
 import Vue from 'vue'
+import storage from '../storage'
+
+let deviceId = storage.getString('deviceId')
+
+if (!deviceId) {
+  deviceId = Math.random().toString(36).substr(2, 10)
+  storage.setString('deviceId', deviceId)
+}
 
 const state = {
-  user: null
+  deviceId,
+  loading: false,
+  error: null,
+  isConnected: false,
+  gameId: null
 }
 
 const getters = {
-  user: state => state.user || null
+  deviceId: state => state.deviceId,
+  connectStatus: state => ({ loading: state.loading, error: state.error }),
+  isConnected: state => state.isConnected,
+  gameId: state => state.gameId
 }
 
 const actions = {
-  // auth ({ commit }, { email, password }) {
-  //   commit('AUTH_REQUEST', {})
-  //   return authApi.auth(email, password).then(data => {
-  //     commit('AUTH_REQUEST_SUCCESS', data)
-  //   }).catch(error => {
-  //     commit('AUTH_REQUEST_ERROR', { error })
-  //   })
-  // },
+  connect ({ commit }) {
+    commit('CONNECT', {})
+  },
+  connected ({ commit }, { gameId }) {
+    commit('AUTH', { isConnected: true })
+  },
+  disconnected ({ commit }, { error }) {
+    commit('AUTH', { isConnected: false, gameId: null, error })
+  }
 }
 
 const mutations = {
-  LOGOUT (state) {
-    Vue.set(state, 'user', null)
+  CONNECT (state) {
+    Vue.set(state, 'loading', true)
+    Vue.set(state, 'error', null)
+  },
+  AUTH (state, { isConnected, error }) {
+    Vue.set(state, 'loading', false)
+    Vue.set(state, 'error', error || null)
+    Vue.set(state, 'isConnected', isConnected)
+    Vue.set(state, 'gameId', gameId || null)
   }
 }
 

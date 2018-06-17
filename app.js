@@ -6,8 +6,6 @@ initServer({
   release: pkg.name + '.' + pkg.version,
   config,
   modules: [
-    'mongo',
-
     // 'service/user',
 
     'server-web',
