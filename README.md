@@ -1,0 +1,2 @@
+# scrab
+Scrabble FR
