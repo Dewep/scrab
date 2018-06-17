@@ -1,5 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
+const http = require('http')
 
 class ServerWeb {
   constructor (app) {
@@ -7,7 +8,8 @@ class ServerWeb {
 
     this.config = app.config.serverWeb
 
-    this.server = express()
+    this.express = express()
+    this.server = http.createServer(this.express)
     this.controllers = []
   }
 
@@ -20,26 +22,26 @@ class ServerWeb {
     }
 
     // Middlewares (cors, logger, json, etc.)
-    this.server.set('etag', false)
-    this.server.set('trust proxy', true)
+    this.express.set('etag', false)
+    this.express.set('trust proxy', true)
 
-    this.server.head('/', (req, res, next) => { // HAProxy checks
+    this.express.head('/', (req, res, next) => { // HAProxy checks
       res.json({})
     })
 
     if (this.config.cors) {
       const cors = require('cors')
-      this.server.use(cors(this.config.cors))
+      this.express.use(cors(this.config.cors))
     }
 
     if (this.app.analytic && this.app.analytic.middleware) {
-      this.server.use(this.app.analytic.middleware())
+      this.express.use(this.app.analytic.middleware())
     }
 
-    this.server.use(bodyParser.json({ limit: this.config.jsonLimit || '100kb' })) // @TODO: express.json is now available
+    this.express.use(bodyParser.json({ limit: this.config.jsonLimit || '100kb' })) // @TODO: express.json is now available
 
     if (this.config.consoleLogger !== false) {
-      this.server.use(this.logger)
+      this.express.use(this.logger)
     }
 
     // Get controller routes
@@ -52,7 +54,7 @@ class ServerWeb {
         const controller = this.controllers[c]
 
         if (controller[routingStep]) {
-          controller[routingStep](this._registerControllerRoute(this.server, controller))
+          controller[routingStep](this._registerControllerRoute(this.express, controller))
         }
       }
     }
@@ -60,16 +62,16 @@ class ServerWeb {
     // Static routes
     if (this.config.static) {
       for (const directory of this.config.static) {
-        this.server.use(express.static(directory))
+        this.express.use(express.static(directory))
       }
     }
 
     // Error handling
-    this.server.use(this.errorHandling.bind(this))
+    this.express.use(this.errorHandling.bind(this))
 
     // Listen
-    this.server.listen(this.config.port, () => {
-      console.info('[server-web] running on port', this.config.port)
+    this.server.listen(this.config.port, this.config.host, () => {
+      console.info('[server-web] running on', `${this.config.host}:${this.config.port}`)
     })
   }
 

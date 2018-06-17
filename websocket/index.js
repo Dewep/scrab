@@ -8,12 +8,10 @@ class Websocket {
 
     this.controllers = []
     this.clients = []
-  }
 
-  async setup () {
     this.ws = new ws.Server({
       server: this.app.serverWeb.server,
-      path: '/'
+      path: '/scrab'
     })
   }
 
